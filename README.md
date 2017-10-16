@@ -1,6 +1,6 @@
 # Bamazon
 
-##Amazon-like storefront with the MySQL. 
+## Amazon-like storefront with the MySQL. 
 
 **Freaturing:**
 
