@@ -9,11 +9,12 @@
 // View Product Sales by Department
 // Create New Department
 // When a supervisor selects View Product Sales by Department, the app should display a summarized table in their terminal/bash window. Use the table below as a guide.
-// Required node modules.
+// Required node modules
 
+//require mysql and inquirer
 var mysql = require("mysql");
 var inquirer = require("inquirer");
-var table = require("console.table");
+var table = require("columnify");
 
 // Connects to database.
 var connection = mysql.createConnection({
@@ -26,82 +27,103 @@ var connection = mysql.createConnection({
   database: "Bamazon"
 });
 
-// If connection doesn't work, throws error, else...
-connection.connect(function(err) {
-  if (err) throw err;
+start();
 
-  // Lets supervisor pick action.
-  selectAction();
+function start(){
+  inquirer.prompt([{
+  	name: "menu",
+    type: "rawlist",
+    message: "Select an option below?",
+    choices: ["View Product Sales by Department", "Create New Department", "Exit"]
+  }]).then(function(ans){
+    switch(ans.menu){
+      case "View Product Sales by Department": viewProductByDept();
+      break;
+      case "Create New Department": createNewDept();
+      break;
+      case "Exit": console.log('Bye!');
+    }
+  });
+}
 
-});
+//view product sales by department
+function viewProductByDept(){
+  //prints the items for sale and their details
+  connection.query(
+  "SELECT * FROM Departments ORDER BY department_id",
+   function(err, data){
+    if(err) {throw err;}
+    else{
+	    console.log('Product Sales by Department');
+	    console.log("");
 
-// Supervisor selects to view product sales or create department.
-var selectAction = function() {
-	inquirer.prompt([
-	{
-		type: 'list',
-		name: 'action',
-		message: 'What would you like to do?',
-		choices: [
-			"View Product Sales by Department",
-			"Create New Department"
-		]
-	}
-	]).then(function(answer) {
+	   // call once somewhere in the beginning of the app
 
-		// Functions called based on supervisor's selection.
-		switch (answer.action) {
-		    case "View Product Sales by Department":
-		    	viewDepartmentSales();
-		      	break;
 
-		    case "Create New Department":
-		    	createDepartment();
-		      	break;
-		}
-	});
-};
+	    console.log('----------------------------------------------------------------------------------------------------')
 
-// Supervisor views product sales by department.
-// The total profit is calculated based on total sales minus overhead costs.
-// Total profit added to table using aliases.
-var viewDepartmentSales = function() {
-	var query = "Select department_id AS department_id, department_name AS department_name," +
-				"over_head_costs AS over_head_costs, total_sales AS total_sales," +
-				"(total_sales - over_head_costs) AS total_profit FROM departments";
-	connection.query(query, function(err, res) {
+	    for(var i = 0; i<data.length;i++){
+	      console.log("Department ID: " + data[i].department_id + " | " + "Department Name: " + data[i].department_name + " | "
+	       + "Over Head Cost: " + (data[i].over_head_costs).toFixed(2) + " | "
+	       + "Product Sales: " + (data[i].total_sales).toFixed(2) + " | " + "Total Profit: "
+	       + (data[i].total_sales - data[i].over_head_costs).toFixed(2));
+	      console.log('--------------------------------------------------------------------------------------------------')
+	      console.log("");
+	    }
+	    console.log("");
+	    start();
+	 }
+  })
+}
 
-		if (err) throw err;
+  //create a new department
+  function createNewDept(){
+    console.log('Creating New Department');
+    //prompts to add deptName and numbers. if no value is then by default = 0
+    inquirer.prompt([
+    {
+      type: "input",
+      name: "deptName",
+      message: "Department Name: "
+    }, 
+    {
+      type: "input",
+      name: "overHeadCost",
+      message: "Over Head Cost: ",
+      default: 0.00,
+      validate: function(val){
+        if(isNaN(val) === false){return true;}
+        else{return false;}
+   	  }
+    }, 
+    {
+      type: "input",
+      name: "prodSales",
+      message: "Product Sales: ",
+      default: 0.00,
+      validate: function(val){
+        if(isNaN(val) === false){return true;}
+        else{return false;}
+      }
+    }
+    ])
+    .then(function(answer){
+      connection.query(
+      "INSERT INTO Departments SET ?",
+      {
+        DepartmentName: answer.deptName,
+        OverHeadCosts: answer.overHeadCost,
+        TotalSales: answer.prodSales
+      },
+       function(err, res){
+        if(err) {
+        	throw err;
+        }
+        else{
+        	console.log('A New department was added.');
+        }
+      })
+      start();
+    });
+  }
 
-		// Product sales displayed in neat table in console.
-		console.table(res);
-		selectAction();
-	});
-};
-
-//Supervisor creates new department.
-var createDepartment = function() {
-		inquirer.prompt([{
-		name: "department_name",
-		type: "input",
-		message: "What is the new department name?"
-	}, {
-		name: "over_head_costs",
-		type: "input",
-		message: "What are the overhead costs for this department?"
-	}]).then(function(answer) {
-
-		// Department added to departments database.
-		connection.query("INSERT INTO departments SET ?", {
-			department_name: answer.department_name,
-			over_head_costs: answer.over_head_costs
-		}, function(err, res) {
-			if (err) {
-				throw err;
-			} else {
-				console.log("Your department was added successfully!");
-				selectAction();
-			}
-		});
-	});
-};
