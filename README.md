@@ -141,16 +141,16 @@ example 9:
 
 
 
-####Contributors:
+#### Contributors:
 *VBMcFarlane 
 
-Technologies Used:
+### Technologies Used:
 
 1. Javascript
 2. nodeJS
 3. MySQL database
 
-###npm packages:
+### npm packages:
 1. mysql
 2. inquirer
 3. cli-table
