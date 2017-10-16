@@ -20,7 +20,7 @@
   },
   "homepage": "https://github.com/vbmcfarlane/Bamazon#readme",
   "dependencies": {
-    "columnify": "^1.5.4",
+    "cli-table": "^0.3.1",
     "inquirer": "^3.3.0",
     "mysql": "^2.15.0"
   }

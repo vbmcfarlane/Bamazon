@@ -12,7 +12,7 @@
 // Required node modules.
 var mysql = require("mysql");
 var inquirer = require("inquirer");
-
+var Table = require("cli-table");
 // Connects to the database.
 var connection = mysql.createConnection({
   host: "localhost",
@@ -39,7 +39,7 @@ function menuOption() {
 	.prompt({
 		name: 'action',
 		type: "rawlist",
-		message: 'Select a option from the list below? ',
+		message: 'Select an option from the list below? ',
 		choices: [
 					"View Products for Sale",
 					"View Low Inventory",
@@ -54,25 +54,26 @@ function menuOption() {
 		switch (answer.action) {
 		    case "View Products for Sale":
 		    	viewProducts();
-		      	break;
+		    break;
 
 		    case "View Low Inventory":
 		    	viewLowInventory();
-		      	break;
+		    break;
 
 		    case "Add to Inventory":
 		    	addInventory();
-		      	break;
+		    break;
 
 		    case "Add New Product":
 		    	addProduct();
-		      	break;
+		     break;
 		    case "Exit":
+		    	connection.end();
 		        return;
-		        break;
+		     break;
 		    default:
-          console.log( "invalid choice, try again");
-          break;
+         		 console.log( "invalid choice, try again");
+          	break;
 		}
 	});
 };
@@ -83,16 +84,33 @@ var viewProducts = function() {
 	connection.query(
     "SELECT item_id, product_name, department_name, price, stock_quantity, product_sales FROM products ORDER BY department_name ", 
     function(err, res) {
-      console.log("");
-      console.log("");
-      console.log("Products For Sale: ");
-      console.log('--------------------------------------------------------------------------------------------------------------------');
-      console.log("");
-      for(var i = 0; i<res.length;i++){
-      console.log("Item ID: " + res[i].item_id + " | " + "Product Name: " + res[i].product_name + " | " + "Department: " + res[i].department_name + " | " + "Price: " + res[i].price + " | " + "QTY: " + res[i].stock_quantity);
-      console.log('----------------------------------------------------------------------------------------------------------------------');
+    	var table = new Table({
+	    head: ['Item Id#', 'Product Name', 'Department name', 'Unit Price', 'Stock Quantity', 'Product Sales'],
+	    style: {
+	      head: ['green'],
+	      compact: false,
+	      colAligns: ['left'],
+	    }
+	  });
+    for(var i = 0; i<res.length;i++){
+    	table.push(
+                [res[i].item_id, res[i].product_name, res[i].department_name, res[i].price.toFixed(2), res[i].stock_quantity, res[i].product_sales.toFixed(2)]
+        );
+        
     }
-    	console.log("");
+   console.log("");
+   console.log(table.toString());
+   console.log("");	
+    //   console.log("");
+    //   console.log("");
+    //   console.log("Products For Sale: ");
+    //   console.log('--------------------------------------------------------------------------------------------------------------------');
+    //   console.log("");
+    //   for(var i = 0; i<res.length;i++){
+    //   console.log("Item ID: " + res[i].item_id + " | " + "Product Name: " + res[i].product_name + " | " + "Department: " + res[i].department_name + " | " + "Price: " + res[i].price + " | " + "QTY: " + res[i].stock_quantity);
+    //   console.log('----------------------------------------------------------------------------------------------------------------------');
+    // }
+    	
 		// Prompt Manager to select new action.
 		menuOption();
 	});
@@ -107,12 +125,33 @@ function viewLowInventory() {
 	connection.query(
 		"SELECT item_id, product_name, stock_quantity FROM products WHERE stock_quantity < 5", 
 		function(err, res) {
+
 		if (err) throw err;
-		for (var i = 0; i < res.length; i++) {
-			console.log("Product ID: " + res[i].item_id + " | Product Name: " + res[i].product_name + " | Stock Quantity: " + res[i].stock_quantity);
-		}
-	console.log("");
-		// Prompt Manager to select new action.
+			
+		var table = new Table({
+	    head: ['Item Id#', 'Product Name',  'Stock Quantity'],
+	    style: {
+	      head: ['green'],
+	      compact: false,
+	      colAligns: ['left'],
+	    }
+	  });
+    for(var i = 0; i<res.length;i++){
+    	table.push(
+                [res[i].item_id, res[i].product_name, res[i].product_name, res[i].stock_quantity]
+        );
+        
+    }
+	   console.log("");
+	   console.log(table.toString());
+	   console.log("");
+
+	// 	if (err) throw err;
+	// 	for (var i = 0; i < res.length; i++) {
+	// 		console.log("Product ID: " + res[i].item_id + " | Product Name: " + res[i].product_name + " | Stock Quantity: " + res[i].stock_quantity);
+	// 	}
+	// console.log("");
+	// 	// Prompt Manager to select new action.
 		menuOption();
 	});
 };
@@ -144,7 +183,7 @@ function addInventory() {
 				     },
 
 				    function(error, data) {
-				    	console.log( JSON.stringify(data, null, 2));
+				    //	console.log( JSON.stringify(data, null, 2));
 				    if (error) {throw error;
 				              console.log("error = " + error);
 				     }
@@ -152,7 +191,7 @@ function addInventory() {
 				    	  var reStockItem = data[0];
 				    	  var updatedStock = parseInt(data[0].stock_quantity) + parseInt(ans.stock);
 				    	  console.log("");
-						  console.log("Updated item_id : " + ans.productID + " Stock by " + updatedStock);
+						  console.log("Updated item_id : " + ans.productID + " Stock to " + updatedStock + " Units");
 						  console.log("");	
 						// Updates stock for selected product in database.
 						connection.query(
@@ -186,11 +225,11 @@ var addProduct = function() {
 		type: "input",
 		message: "Item number  of product to add: (7) digits?"
 	}, {
-		name: "product_name",
+		name: "product",
 		type: "input",
 		message: "Name of product to add?"
 	}, {
-		name: "department_name",
+		name: "department",
 		type: "input",
 		message: "Department to assign the new product?"
 	}, {
@@ -198,74 +237,32 @@ var addProduct = function() {
 		type: "input",
 		message: "Unit price for product,  ###.##?"
 	}, {
-		name: "stock_quantity",
+		name: "stock_amount",
 		type: "input",
 		message: "Starting Stock volume for Product?"
 	}])
 	.then(function(answer) {
+
+		
+
 		connection.query(
 		"INSERT INTO products SET ?", 
 		{
 			Item_id: answer.product_number,
-			product_name: answer.product_name,
-			department_name: answer.department_name,
+			product_name: answer.product,
+			department_name: answer.department,
 			price: answer.price,
-			stock_quantity: answer.stock_quantity
+			stock_quantity: answer.stock_amount
 		}, 
 		function(err, res) {
 			if (err) {
 				throw err;
 			} else {
-				console.log("Product" + answer.product_num + " : " + answer.product_name + " was added successfully!");
+				console.log("Product ID: " + answer.product_number + " : " + answer.product + ", was added successfully!");
 
-				// Checks if department exists.
-				verifyDeptName(answer.department_name);
-			}
+			}	
+		menuOption();	
 		});
 	});
-};
-// //====================================================================================================
 
-// Checks if department exists.
-function verifyDeptName(departmentName) {
-	connection.query(
-	"Select department_name FROM departments",
-
-	function(err, res) {
-		if (err) throw err;
-
-		// Check to see if deparment exists
-		
-			if (departmentName === res[0].department_name) {
-				console.log("Department : " + departmentName + " already exists : " );
-				menuOption();
-			
-			}else{ 
-					// Add new department. 
-					addNewDepartment(departmentName);
-				 }
-	});
-};
-
-
-// Adds new department.
-// Nice feature to let both managers and supervisors add departments.
-var addNewDepartment = function(departmentName) {
-	console.log("Adding new department: " + departmentName);
-
-	// Adds department to departments table in database.
-	connection.query(
-	"INSERT INTO departments SET ?", 
-		{
-			department_id: ("SELECT max(department_id ) + FROM departments") + 50,
-			department_name: departmentName
-		}, 
-		function(err, res) {
-			if (err) {
-				throw err;
-			} else {
-				console.log("New department : " + departmentName + ";  was added successfully!");
-				menuOption();
-			}
-		});
 };

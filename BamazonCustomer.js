@@ -1,75 +1,81 @@
 var mysql = require("mysql");
 var inquirer = require("inquirer");
+var Table = require("cli-table");
 
-var connection = mysql.createConnection({
-  host: "localhost",
-  port: 3306,
-  // Your username
-  user: "root",
-  // Your password
-  password: "Abigail04$",
-  database: "bamazon"
-});
-connection.connect(function(err) {
-  if (err) throw err;
-console.log("connected as id = " + connection.threadId + "\n");
+  var connection = mysql.createConnection({
+    host: "localhost",
+    port: 3306,
+    // Your username
+    user: "root",
+    // Your password
+    password: "Abigail04$",
+    database: "bamazon"
+  });
+  connection.connect(function(err) {
+    if (err) throw err;
+  console.log("connected as id = " + connection.threadId + "\n");
 
-  runSearch();
-});
-
-function runSearch() {
-  inquirer
-    .prompt({
-      name: "action",
-      type: "rawlist",
-      message: "Which level do you want to access?",
-      choices: [
-        "Customer",
-        "Supervisor",
-        "Manager",
-        "Exit"
-       ]
-    })
-    .then(function(answer) {
-      switch (answer.action) {
-        case "Customer":
-         displayInventory();
-         
+    runSearch();
+  });
+//=====================================================================================
+  function runSearch() {
+    inquirer
+      .prompt({
+        name: "action",
+        type: "rawlist",
+        message: "Which level do you want to access?",
+        choices: [
+          "Customer",
+          "Exit"
+         ]
+      })
+      .then(function(answer) {
+        switch (answer.action) {
+          case "Customer":
+              displayInventory();
           break;
-        case "Supervisor":
-          multiSearch();
+          case "Exit":
+               console.log("Thanks for visiting, come again soon !")
+               console.log("");
+               connection.end();
+               return;
           break;
-        case "Manager":
-          rangeSearch();
-        case "Exit":
-          return;
+          default:
+            console.log( "invalid choice, try again");
           break;
-        default:
-          console.log( "invalid choice, try again");
-          break;
-      }
-    });
+        }
+      });
 }
 
-//========================================================================================
-
-  
+ 
 //=========================================================================================
+
 function  displayInventory() {
+  //creates a table for the information from the mysql database to be placed
   
- // var query = "SELECT item_id, product_name, department_name, price, stock_quantity FROM products ORDER BY department_name ";  
   connection.query(
     "SELECT item_id, product_name, department_name, price, stock_quantity, product_sales FROM products ORDER BY department_name ", 
     function(err, res) {
-      console.log("");
-      console.log("");
-      console.log("Products For Sale: ");
-      console.log('--------------------------------------------------------------------------------------------------------------------');
-      console.log("");
-      for(var i = 0; i<res.length;i++){
-      console.log("Item ID: " + res[i].item_id + " | " + "Product: " + res[i].product_name + " | " + "Department: " + res[i].department_name + " | " + "Price: " + res[i].price + " | " + "QTY: " + res[i].stock_quantity);
-      console.log('----------------------------------------------------------------------------------------------------------------------');
+  //creates a table for the information from the mysql database to be placed
+  var table = new Table({
+    head: ['Item Id#', 'Product Name', 'Department name', 'Unit Price', 'Stock Quantity'],
+    style: {
+      head: ['green'],
+      compact: false,
+      colAligns: ['left'],
     }
+  });
+
+      for(var i = 0; i<res.length;i++){
+
+   //   console.log("Item ID: " + res[i].item_id + " | " + "Product Name: " + res[i].product_name + " | " + "Department: " + res[i].department_name + " | " + "Price: " + res[i].price + " | " + "QTY: " + res[i].stock_quantity);
+      table.push(
+                [res[i].item_id, res[i].product_name, res[i].department_name, res[i].price.toFixed(2), res[i].stock_quantity]
+        );
+        console.log("");
+    }
+   console.log("");
+   console.log(table.toString());
    console.log("");
    selectItem();
 
@@ -84,7 +90,7 @@ function selectItem() {
             {
               name: "productId",
               type: "input",
-              message: "Please enter product ID for product you want.",
+              message: "Please enter 'Item ID' for product you want to purchase.",
               validate: function(value) {
                     if (isNaN(value) === false) {
                       return true;
@@ -154,18 +160,19 @@ function selectItem() {
                             ], function(err, result){
                                 if(err) throw err;
                                // Tells user purchase is a success.
-                                  console.log("Your purchase is complete.");
+                                  
                                   console.log("");
-                                  console.log("Your order of : " + answer.productUnits + " : " + productName);
-                                  console.log("");
-                                  console.log("Has been shipped");
+                                  console.log("Your order of : " + answer.productUnits + " - " + productName);
+                                 // console.log("");
+                                  console.log("has been shipped");
                                   console.log("");
                                   // Display the total price for that purchase.has been received
-                                  console.log("Your payment of : " + totalPrice.toFixed(2) + " has been received");
+                                  console.log("***THANK YOU***. Your payment of : $" + totalPrice.toFixed(2) + " has been received");
                                   console.log("");
-
+                                  console.log("Your purchase is complete.");
+                                  console.log("");
                                   // Updates department revenue based on purchase.
-                                  updateDepartmentData(updatedProductSales, productDepartment);
+                                  updateDeptData(updatedProductSales, productDepartment);
                         
                          });
                      }
@@ -178,7 +185,7 @@ function selectItem() {
 
 //===========================================================================================
 // Updates total sales for department after completed purchase.
- function updateDepartmentData(productSales, department) {
+ function updateDeptData(productSales, department) {
 
   // Query database for total sales value for department.
 
@@ -192,7 +199,7 @@ function selectItem() {
     if (err) throw err;
 
     var departmentSales = res[0].total_sales;
-    console.log("Total Department Sales : " + departmentSales);
+  //  console.log("Total Department Sales : $" + departmentSales);
     console.log("");
     var updatedDepartmentSales = parseInt(departmentSales) + parseInt(productSales);
 
@@ -204,7 +211,7 @@ function selectItem() {
 // Completes update to total sales for department on database.
 function updateDeptSales(updatedDepartmentSales, department) {
 
-  var query = ;
+ 
   connection.query(
     "UPDATE departments SET ? WHERE ?", 
     [
@@ -222,19 +229,22 @@ function updateDeptSales(updatedDepartmentSales, department) {
     reprompt();
   });
 };
-
- 
+//======================================================================================== 
 function reprompt(){
-  inquirer.prompt([{
-    type: "confirm",
-    name: "reply",
-    message: "Would you like to purchase another item?"
-  }]).then(function(ans){
-    if(ans.reply){
-      displayInventory()
-    } else{
-      console.log("See you soon!");
-    }
+  inquirer
+    .prompt([{
+        type: "confirm",
+        name: "reply",
+        message: "Would you like to purchase another item?"
+    }])
+    .then(function(ans){
+      if(ans.reply){
+        displayInventory()
+      } else{
+        console.log("");
+        console.log("See you soon!");
+        connection.end();
+      }
   });
 }
 //==============================end of code==================================================

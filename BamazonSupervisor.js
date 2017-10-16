@@ -14,8 +14,7 @@
 //require mysql and inquirer
 var mysql = require("mysql");
 var inquirer = require("inquirer");
-var table = require("columnify");
-
+var Table = require("cli-table");
 // Connects to database.
 var connection = mysql.createConnection({
   host: "localhost",
@@ -37,11 +36,20 @@ function start(){
     choices: ["View Product Sales by Department", "Create New Department", "Exit"]
   }]).then(function(ans){
     switch(ans.menu){
-      case "View Product Sales by Department": viewProductByDept();
+      case "View Product Sales by Department": 
+      		viewProductByDept();
       break;
-      case "Create New Department": createNewDept();
+      case "Create New Department": 
+      		createNewDept();
       break;
-      case "Exit": console.log('Bye!');
+      case "Exit": 
+     		console.log("");
+    		console.log('Come back again. See you soon !');
+      		connection.end();
+      break;
+     default:
+          	console.log( "invalid choice, try again");
+          break;
     }
   });
 }
@@ -56,21 +64,37 @@ function viewProductByDept(){
     else{
 	    console.log('Product Sales by Department');
 	    console.log("");
-
+	    var table = new Table({
+	    head: ['Department ID#', 'Department name', 'Over Head Cost','Product Sales', 'Total Profit'],
+	    style: {
+	      head: ['green'],
+	      compact: false,
+	      colAligns: ['left'],
+	    }
+	  });
 	   // call once somewhere in the beginning of the app
 
 
 	    console.log('----------------------------------------------------------------------------------------------------')
 
 	    for(var i = 0; i<data.length;i++){
-	      console.log("Department ID: " + data[i].department_id + " | " + "Department Name: " + data[i].department_name + " | "
-	       + "Over Head Cost: " + (data[i].over_head_costs).toFixed(2) + " | "
-	       + "Product Sales: " + (data[i].total_sales).toFixed(2) + " | " + "Total Profit: "
-	       + (data[i].total_sales - data[i].over_head_costs).toFixed(2));
-	      console.log('--------------------------------------------------------------------------------------------------')
-	      console.log("");
-	    }
-	    console.log("");
+	    	 table.push(
+                [data[i].department_id, data[i].department_name, data[i].over_head_costs.toFixed(2), (data[i].total_sales).toFixed(2), (data[i].total_sales - data[i].over_head_costs).toFixed(2)]
+		        );
+		        console.log("");
+		    }
+		   console.log("");
+		   console.log(table.toString());
+		   console.log("");
+		     
+	    //   console.log("Department ID: " + data[i].department_id + " | " + "Department Name: " + data[i].department_name + " | "
+	    //    + "Over Head Cost: " + (data[i].over_head_costs).toFixed(2) + " | "
+	    //    + "Product Sales: " + (data[i].total_sales).toFixed(2) + " | " + "Total Profit: "
+	    //    + (data[i].total_sales - data[i].over_head_costs).toFixed(2));
+	    //   console.log('--------------------------------------------------------------------------------------------------')
+	    //   console.log("");
+	    // }
+	    // console.log("");
 	    start();
 	 }
   })
@@ -81,6 +105,11 @@ function viewProductByDept(){
     console.log('Creating New Department');
     //prompts to add deptName and numbers. if no value is then by default = 0
     inquirer.prompt([
+    {
+      type: "input",
+      name: "deptId",
+      message: "Entera 3-digit number DepartmentId: "
+    }, 	
     {
       type: "input",
       name: "deptName",
@@ -98,32 +127,37 @@ function viewProductByDept(){
     }, 
     {
       type: "input",
-      name: "prodSales",
-      message: "Product Sales: ",
+      name: "totalSales",
+      message: "Total Sales: ",
       default: 0.00,
       validate: function(val){
-        if(isNaN(val) === false){return true;}
-        else{return false;}
+        if(isNaN(val) === false){
+        return true;
+        }
+        else{
+        return false;
+        }
       }
     }
     ])
     .then(function(answer){
       connection.query(
-      "INSERT INTO Departments SET ?",
+      "INSERT INTO departments SET ?",
       {
-        DepartmentName: answer.deptName,
-        OverHeadCosts: answer.overHeadCost,
-        TotalSales: answer.prodSales
+      	department_id: answer.deptId,
+        department_name: answer.deptName,
+        over_head_costs: answer.overHeadCost,
+        total_sales: answer.totalSales
       },
        function(err, res){
-        if(err) {
-        	throw err;
-        }
+        if(err) {throw err;}
         else{
-        	console.log('A New department was added.');
+        //	console.log('A New department was added.');
+        	console.log("New department ID : " + answer.deptId + " with Department Name : " + answer.deptName + ";  was added successfully!");
+        	console.log("");
+        	start();
         }
       })
-      start();
+      // start();
     });
   }
-
