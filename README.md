@@ -5,7 +5,7 @@
 **Freaturing:**
 
 	1. Customer View; 
-	2. Manager View, and 
+	2. Manager View 
 	3. Supervisor View 
   
 **Synopsis**
