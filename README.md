@@ -139,19 +139,20 @@ example 9:
 ![screenshot 44](https://user-images.githubusercontent.com/28761006/31632859-acbe87aa-b27b-11e7-9b7e-6376d3e22245.png)
  
 
-Bamazon Executive Portal
 
-Contributors:
 
-VBMcFarlane 
+####Contributors:
+*VBMcFarlane 
 
 Technologies Used:
 
-Javascript
-nodeJS
-MySQL
-npm packages:
-mysql
-prompt
-cli-table
-Copyright 2017- VBMcFarlane
+1. Javascript
+2. nodeJS
+3. MySQL database
+
+###npm packages:
+1. mysql
+2. inquirer
+3. cli-table
+
+***Copyright 2017- VBMcFarlane***
