@@ -8,7 +8,7 @@ var Table = require("cli-table");
     // Your username
     user: "root",
     // Your password
-    password: "Abigail04$",
+    password: "",
     database: "bamazon"
   });
   connection.connect(function(err) {

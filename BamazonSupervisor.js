@@ -22,7 +22,7 @@ var connection = mysql.createConnection({
   // Root is default username.
   user: "root",
   // Password is empty string.
-  password: "Abigail04$",
+  password: "",
   database: "Bamazon"
 });
 
